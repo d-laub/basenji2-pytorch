@@ -125,11 +125,11 @@ class PLBasenji2(pl.LightningModule):
             model_params.pop("head_human", None)
         
         if train_params is None and not pretrained:
-            self.train_params = params["train"]
+            self.hparams['train_params'] = params["train"]
             
         if not pretrained:
-            self.hparams["lr"] = self.train_params["learning_rate"]
-            self.hparams["batch_size"] = self.train_params["batch_size"]
+            self.hparams["lr"] = self.hparams.train_params["learning_rate"] # type: ignore
+            self.hparams["batch_size"] = self.hparams.train_params["batch_size"] # type: ignore
 
         self.basenji2 = Basenji2(model_params)
         self.loss_fn = nn.PoissonNLLLoss(log_input=False)
