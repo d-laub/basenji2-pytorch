@@ -1,4 +1,16 @@
-# Usage
+# Basenji2 in PyTorch
+
+This repo provides a PyTorch re-implementation of the Basenji2 model published in ["Cross-species regulatory sequence activity prediction"](https://doi.org/10.1371/journal.pcbi.1008050) by David Kelley.
+
+## Installation
+
+On Linux with conda/mamba:
+
+1. Clone the repository.
+2. Add it to your PYTHONPATH environment variable (i.e. in your `.bashrc` file).
+3. Use [conda-lock](https://github.com/conda-incubator/conda-lock) to install dependencies from the `conda-lock.yml` found in the repo.
+
+## Usage
 
 ```python
 import json
