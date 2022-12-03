@@ -8,19 +8,18 @@ On Linux with conda/mamba:
 
 1. Clone the repository.
 2. Add it to your PYTHONPATH environment variable (i.e. in your `.bashrc` file).
-3. Use [conda-lock](https://github.com/conda-incubator/conda-lock) to install dependencies from the `conda-lock.yml` found in the repo.
+3. Use conda/mamba to install dependencies from the `environment.yml` found in the repo.
 
 ## Usage
 
 ```python
 import json
 import torch
-from basenji_pytorch import Basenji2 # or PLBasenji2 to use training parameters from Kelley et al. 2020
+from basenji_pytorch import Basenji2, params # or PLBasenji2 to use training parameters from Kelley et al. 2020
 
-params_file = 'path/to/params_human.json'
 model_weights = 'path/to/basenji2.pth'
 
-with open(params_file) as params_open:
+with open(params) as params_open:
     model_params = json.load(params_open)['model']
 
 # to use a headless model e.g. for transfer learning
