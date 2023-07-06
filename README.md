@@ -1,6 +1,6 @@
 # Basenji2 in PyTorch
 
-This repo provides a PyTorch re-implementation of the Basenji2 model published in ["Cross-species regulatory sequence activity prediction"](https://doi.org/10.1371/journal.pcbi.1008050) by David Kelley.
+This repo provides a PyTorch re-implementation of the Basenji2 model published in ["Cross-species regulatory sequence activity prediction"](https://doi.org/10.1371/journal.pcbi.1008050) by David Kelley. This implementation was checked by verifying that the Tensorflow and PyTorch version yielded the same output on random data. Small deviations were found, likely due to differences in the underlying algorithms used by Tensorflow and PyTorch (e.g. different matrix multiplication algorithms).
 
 ## Installation
 
