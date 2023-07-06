@@ -9,6 +9,7 @@ On Linux with conda/mamba:
 1. Clone the repository.
 2. Add it to your PYTHONPATH environment variable (i.e. in your `.bashrc` file).
 3. Use conda/mamba to install dependencies from the `environment.yml` found in the repo.
+4. Download the [PyTorch weights](https://drive.google.com/file/d/1VrSyIOqcdIMbgstsJztn5P8a9h7p0Dnb/view?usp=sharing).
 
 ## Usage
 
