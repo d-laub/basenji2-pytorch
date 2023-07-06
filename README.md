@@ -16,7 +16,7 @@ On Linux with conda/mamba:
 ```python
 import json
 import torch
-from basenji_pytorch import Basenji2, params # or PLBasenji2 to use training parameters from Kelley et al. 2020
+from basenji2_pytorch import Basenji2, params # or PLBasenji2 to use training parameters from Kelley et al. 2020
 
 model_weights = 'path/to/basenji2.pth'
 
