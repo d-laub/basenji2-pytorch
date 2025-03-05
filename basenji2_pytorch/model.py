@@ -1,27 +1,76 @@
 """Re-implementation of Basenji2, [Cross-species regulatory sequence activity prediction](https://doi.org/10.1371/journal.pcbi.1008050).
 
 This is a minimal re-implementation that is not compatible with the full range of configuration
-supported by the Basenji GitHub repository to instantiate a `basenji.seqnn.SeqNN` object.
+supported by the Basenji GitHub to instantiate a `basenji.seqnn.SeqNN` object.
 """
 
 from __future__ import annotations
 
-import json
 import warnings
 from collections import OrderedDict
 from textwrap import dedent
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pytorch_lightning as pl
 import torch
 import torchinfo
 from natsort import natsorted
+from pooch import retrieve
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 from torch import nn
 from torchmetrics import Metric, MetricCollection, PearsonCorrCoef
 
-from basenji2_pytorch import blocks
+from .blocks import ACTIVATION_LAYER_REGISTRY, BLOCK_REGISTRY
+
+
+def basenji2_weights() -> str:
+    retrieve(
+        url="https://zenodo.org/records/14969593/files/basenji2.pth?download=1",
+        known_hash="md5:1f46acc933e05515faf4d7eec0e27d42",
+    )
+
+
+basenji2_params = {
+    "train": {
+        "batch_size": 4,
+        "optimizer": "sgd",
+        "learning_rate": 0.15,
+        "momentum": 0.99,
+        "patience": 16,
+        "clip_norm": 2,
+    },
+    "model": {
+        "seq_length": 131072,
+        "target_length": 1024,
+        "activation": "gelu",
+        "norm_type": "batch",
+        "bn_momentum": 0.9,
+        "trunk": [
+            {"name": "conv_block", "filters": 288, "kernel_size": 15, "pool_size": 2},
+            {
+                "name": "conv_tower",
+                "filters_init": 339,
+                "filters_mult": 1.1776,
+                "kernel_size": 5,
+                "pool_size": 2,
+                "repeat": 6,
+            },
+            {
+                "name": "dilated_residual",
+                "filters": 384,
+                "rate_mult": 1.5,
+                "repeat": 11,
+                "dropout": 0.3,
+                "round": True,
+            },
+            {"name": "Cropping1D", "cropping": 64},
+            {"name": "conv_block", "filters": 1536, "dropout": 0.05},
+        ],
+        "head_human": {"name": "final", "units": 5313, "activation": "softplus"},
+    },
+}
+
 
 # 30,123,584 parameters
 # 30,099,228 trainable parameters
@@ -32,7 +81,7 @@ class Basenji2(nn.Module):
             self.__setattr__(k, v)
         self.build_model()
 
-    def build_block(self, block_params):
+    def build_block(self, block_params: Dict[str, Any]):
         block_args = {}
         block_name = block_params["name"]
 
@@ -47,7 +96,7 @@ class Basenji2(nn.Module):
         block_args.update(block_params)
         del block_args["name"]
 
-        block = blocks.BLOCK_REGISTRY[block_name]
+        block = BLOCK_REGISTRY[block_name]
         return block(**block_args)
 
     def build_model(self):
@@ -68,11 +117,13 @@ class Basenji2(nn.Module):
                 in_channels = block.out_channels
 
         # final trunk activation
-        model_trunk.append(blocks.ACTIVATION_LAYER_REGISTRY[self.activation]())
+        model_trunk.append(ACTIVATION_LAYER_REGISTRY[self.activation]())
         trunk = nn.Sequential(*model_trunk)
 
         # head
-        trunk_stats = torchinfo.summary(trunk, input_size=(1, 4, self.seq_length))
+        trunk_stats = torchinfo.summary(
+            trunk, input_size=(1, 4, self.seq_length), verbose=0
+        )
         trunk_out_features = trunk_stats.summary_list[-1].output_size[-2]
 
         head_keys = natsorted([v for v in vars(self) if v.startswith("head")])
@@ -102,61 +153,61 @@ class Basenji2(nn.Module):
 class PLBasenji2(pl.LightningModule):
     def __init__(
         self,
-        train_params: Optional[Dict] = None,
+        params: Optional[Dict] = None,
         pretrained=False,
         head=True,
         metrics: Optional[List[Metric]] = None,
     ) -> None:
         super().__init__()
         self.save_hyperparameters()
-        params_file = (
-            "/cellar/users/dlaub/projects/reimplemented_nets/basenji2/params_human.json"
-        )
-        with open(params_file) as params_open:
-            params: Dict[str, Dict] = json.load(params_open)
+
+        if params is None:
+            params = basenji2_params
         model_params = params["model"]
 
-        if not head and train_params is not None and not pretrained:
+        if not head and params is not None and not pretrained:
             warnings.warn(
-                f"Got head=False and non-null train parameters. Did you mean to train a headless model?"
+                "Got head=False and non-null train parameters. Did you mean to train a headless model?"
             )
-        
+
         if not head:
             model_params.pop("head_human", None)
-        
-        if train_params is None and not pretrained:
-            self.hparams['train_params'] = params["train"]
-            
+
+        if params is None and not pretrained:
+            self.hparams["train_params"] = params["train"]
+
         if not pretrained:
-            self.hparams["lr"] = self.hparams.train_params["learning_rate"] # type: ignore
-            self.hparams["batch_size"] = self.hparams.train_params["batch_size"] # type: ignore
-
-        self.basenji2 = Basenji2(model_params)
-        self.loss_fn = nn.PoissonNLLLoss(log_input=False)
-
-        if pretrained:
-            model_weights = (
-                "/cellar/users/dlaub/projects/reimplemented_nets/basenji2/basenji2.pth"
-            )
-            self.basenji2.load_state_dict(torch.load(model_weights), strict=False)
+            self.hparams["lr"] = self.hparams.train_params["learning_rate"]  # type: ignore
+            self.hparams["batch_size"] = self.hparams.train_params["batch_size"]  # type: ignore
             msg = dedent(
                 """
                 Use PLBasenji2.get_cross2020_trainer(...) to get a trainer matching the Basenji2 paper.
                 Also use a batch size of 4 with your dataloader/datamodule, or adjust the learning
                 rate proportionally. Original parameters: lr=0.15, batch_size=4
                 """
-                ).strip()
+            ).strip()
             print(msg)
+
+        self.basenji2 = Basenji2(model_params)
+        self.loss_fn = nn.PoissonNLLLoss(log_input=False)
+
+        if pretrained:
+            self.basenji2.load_state_dict(torch.load(basenji2_weights()), strict=False)
         else:
+
             @torch.no_grad()
             def init_weights(m):
                 if isinstance(m, (nn.Conv1d, nn.Linear)):
-                    nn.init.kaiming_normal_(m.weight, nonlinearity='relu')  # matches Keras, gain of sqrt(2) regardless of activation function
-                    if getattr(m, 'bias', False): m.bias.fill_(0)
+                    nn.init.kaiming_normal_(
+                        m.weight, nonlinearity="relu"
+                    )  # matches Keras, gain of sqrt(2) regardless of activation function
+                    if getattr(m, "bias", False):
+                        m.bias.fill_(0)
+
             self.basenji2.apply(init_weights)
 
         # TODO: allow different input sizes (not needed atm)
-        model_stat = torchinfo.summary(self.basenji2, (1, 4, 131072))
+        model_stat = torchinfo.summary(self.basenji2, (1, 4, 131072), verbose=0)
         out_shape = model_stat.summary_list[-1].output_size
 
         if metrics is None:
@@ -190,7 +241,7 @@ class PLBasenji2(pl.LightningModule):
         x = self.basenji2(x)
         self.log_dict(self.test_metrics(x, y))
 
-    def predict_step(self, batch, batch_idx, dataloader_idx):
+    def predict_step(self, batch, batch_idx, dataloader_idx=0):
         x = batch
         return self.basenji2(x)
 

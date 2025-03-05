@@ -1,0 +1,16 @@
+[project]
+name = "basenji2-pytorch"
+version = "0.1.0"
+description = "PyTorch implementation of Basenji2"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "einops>=0.8.1",
+    "natsort>=8.4.0",
+    "numpy>=1.22",
+    "pooch>=1.8.2",
+    "pytorch-lightning>=2",
+    "torch>=2",
+    "torchinfo>=1.8.0",
+    "torchmetrics>=1.6.2",
+]
