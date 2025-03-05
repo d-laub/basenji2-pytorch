@@ -25,7 +25,7 @@ from .blocks import ACTIVATION_LAYER_REGISTRY, BLOCK_REGISTRY
 
 
 def basenji2_weights() -> str:
-    retrieve(
+    return retrieve(
         url="https://zenodo.org/records/14969593/files/basenji2.pth?download=1",
         known_hash="md5:1f46acc933e05515faf4d7eec0e27d42",
     )
