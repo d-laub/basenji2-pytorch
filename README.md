@@ -16,7 +16,7 @@ from basenji2_pytorch import Basenji2, basenji2_params, basenji2_weights # or PL
 # basenji2_params["model"].pop("head_human", None)
 
 basenji2 = Basenji2(basenji2_params["model"])
-basenji2.load_state_dict(torch.load(basenji2_weights()), strict=False)
+basenji2.load_state_dict(torch.load(basenji2_weights()))
 ```
 
 - `basenji2_params` is a dictionary of both training and model parameters matching the implementation in Kelley et al. 2020
