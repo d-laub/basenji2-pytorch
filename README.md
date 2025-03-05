@@ -4,7 +4,7 @@ This repo provides a PyTorch re-implementation of the Basenji2 model published i
 
 ## Installation
 
-pip install basenji2-pytorch
+`pip install basenji2-pytorch`
 
 ## Usage
 
