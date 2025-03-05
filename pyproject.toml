@@ -14,3 +14,7 @@ dependencies = [
     "torchinfo>=1.8.0",
     "torchmetrics>=1.6.2",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
