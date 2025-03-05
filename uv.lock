@@ -147,7 +147,7 @@ wheels = [
 [[package]]
 name = "basenji2-pytorch"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "einops" },
     { name = "natsort" },
@@ -162,7 +162,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "einops", specifier = ">=0.8.1" },
+    { name = "einops", specifier = ">=0.7.0" },
     { name = "natsort", specifier = ">=8.4.0" },
     { name = "numpy", specifier = ">=1.22" },
     { name = "pooch", specifier = ">=1.8.2" },

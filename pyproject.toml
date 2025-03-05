@@ -5,7 +5,7 @@ description = "PyTorch implementation of Basenji2"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "einops>=0.8.1",
+    "einops>=0.7.0",
     "natsort>=8.4.0",
     "numpy>=1.22",
     "pooch>=1.8.2",
